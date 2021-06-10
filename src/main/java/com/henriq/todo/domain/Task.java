@@ -1,21 +1,21 @@
 package com.henriq.todo.domain;
 
 import com.henriq.todo.validator.SelfValidator;
-import lombok.Getter;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-@Getter
+@EqualsAndHashCode(callSuper = true)
+@Value
 public class Task extends SelfValidator<Task> {
 
-  @NotNull
-  private final Long id;
+  @NotNull Long id;
 
-  @NotEmpty
-  private final String name;
+  @NotEmpty String name;
 
-  private final String description;
+  String description;
 
   public Task(Long id, String name, String description) {
     this.id = id;

@@ -7,7 +7,6 @@ import static org.mockito.Mockito.doThrow;
 import com.henriq.todo.domain.Task;
 import com.henriq.todo.domain.Todo;
 import com.henriq.todo.gateway.TodoGateway;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
