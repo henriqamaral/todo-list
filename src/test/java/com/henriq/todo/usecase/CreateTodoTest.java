@@ -3,6 +3,7 @@ package com.henriq.todo.usecase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 
 import com.henriq.todo.domain.Task;
 import com.henriq.todo.domain.Todo;
@@ -11,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -33,7 +33,7 @@ public class CreateTodoTest {
 
     createTodo.execute(todo);
 
-    Mockito.verify(todoGateway).create(todo);
+    verify(todoGateway).create(todo);
   }
 
   @Test
@@ -47,7 +47,7 @@ public class CreateTodoTest {
                                                       () -> createTodo.execute(todo));
 
     assertEquals("error", mandatoryFieldsException.getMessage());
-    Mockito.verify(todoGateway).create(todo);
+    verify(todoGateway).create(todo);
   }
 
 }

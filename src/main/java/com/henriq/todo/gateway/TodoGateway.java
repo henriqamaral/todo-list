@@ -6,7 +6,9 @@ public interface TodoGateway {
 
   void create(final Todo todo);
 
-  Todo getById(Long todoId);
+  Todo getById(final Long todoId);
 
-  void deleteById(Long id);
+  void deleteById(final Long id);
+
+  void update(final Todo todo);
 }

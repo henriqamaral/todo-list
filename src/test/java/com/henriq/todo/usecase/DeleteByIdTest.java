@@ -3,6 +3,7 @@ package com.henriq.todo.usecase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 
 import com.henriq.todo.exception.NotFoundException;
 import com.henriq.todo.gateway.TodoGateway;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,7 +27,7 @@ public class DeleteByIdTest {
 
     deleteById.execute(1L);
 
-    Mockito.verify(todoGateway).deleteById(1L);
+    verify(todoGateway).deleteById(1L);
   }
 
   @Test
