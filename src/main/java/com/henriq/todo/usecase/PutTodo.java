@@ -15,10 +15,10 @@ public class PutTodo {
   public void execute(final Long id, final Todo todo) {
 
     final var oldTodo = todoGateway.getById(id);
-    if(oldTodo == null) {
-      throw new NotFoundException(id);
-    }
 
-    todoGateway.update(todo);
+    oldTodo
+      .ifPresentOrElse((old) -> todoGateway.update(todo),
+                       () -> { throw new NotFoundException(id); }
+      );
   }
 }

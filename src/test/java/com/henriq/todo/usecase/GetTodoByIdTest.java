@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 public class GetTodoByIdTest {
@@ -33,7 +34,7 @@ public class GetTodoByIdTest {
     final var task = new Task(1L, "new task", "do bla bla");
     final var todo = new Todo(1L, "new Todo", "Description", List.of(task));
 
-    when(todoGateway.getById(1L)).thenReturn(todo);
+    when(todoGateway.getById(1L)).thenReturn(Optional.of(todo));
     final var returnedTodo = getTodoById.execute(1L);
 
     Assertions.assertAll(
@@ -47,7 +48,7 @@ public class GetTodoByIdTest {
   @Test
   void shouldReturnNotFoundException() {
 
-    when(todoGateway.getById(1L)).thenThrow(new NotFoundException(1L));
+    when(todoGateway.getById(1L)).thenReturn(Optional.empty());
 
     final var notFoundException = assertThrows(NotFoundException.class,
                                                () -> getTodoById.execute(1L));

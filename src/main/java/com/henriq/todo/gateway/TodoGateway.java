@@ -2,11 +2,13 @@ package com.henriq.todo.gateway;
 
 import com.henriq.todo.domain.Todo;
 
+import java.util.Optional;
+
 public interface TodoGateway {
 
   void create(final Todo todo);
 
-  Todo getById(final Long todoId);
+  Optional<Todo> getById(final Long todoId);
 
   void deleteById(final Long id);
 
