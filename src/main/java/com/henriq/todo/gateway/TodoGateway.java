@@ -2,6 +2,7 @@ package com.henriq.todo.gateway;
 
 import com.henriq.todo.domain.Todo;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TodoGateway {
@@ -13,4 +14,6 @@ public interface TodoGateway {
   void deleteById(final Long id);
 
   void update(final Todo todo);
+
+  List<Todo> getAll();
 }
