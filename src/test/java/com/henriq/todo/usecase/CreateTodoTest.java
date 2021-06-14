@@ -52,8 +52,7 @@ public class CreateTodoTest {
     final var mandatoryFieldsException = assertThrows(DuplicateTodoException.class,
                                                       () -> createTodo.execute(todo));
 
-    assertEquals("Id: 1 already in database", mandatoryFieldsException.getMessage());
-    verify(todoGateway).create(todo);
+    assertEquals("Todo Id: 1 already in database", mandatoryFieldsException.getMessage());
   }
 
 }

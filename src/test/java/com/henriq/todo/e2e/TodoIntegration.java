@@ -9,6 +9,7 @@ import com.henriq.todo.gateway.mongodb.document.TaskDocument;
 import com.henriq.todo.gateway.mongodb.document.TodoDocument;
 import com.henriq.todo.gateway.mongodb.repository.TodoRepository;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -329,7 +330,7 @@ public class TodoIntegration {
 
 
   @Test
-  void shouldUpdateWithTodoSuccess() {
+  void shouldUpdateTodoWithSuccess() {
 
     final var todoInDb = new TodoDocument(1L, "todo no task", "description", null);
     todoRepository.save(todoInDb);
@@ -343,7 +344,7 @@ public class TodoIntegration {
         .body(Mono.just(updateTodo), TodoResource.class)
       .exchange()
         .expectStatus()
-        .isAccepted();
+        .isNoContent();
 
     final var todoUpdated = todoRepository.findById(1L);
 
@@ -354,6 +355,39 @@ public class TodoIntegration {
       .doesNotContainNull()
       .contains(1L, "todo with task", "description",
                 List.of(new TaskDocument(1L, "new task", "description")));
+  }
+
+
+  @Test
+  void shouldFailDeleteWithTodoNotFound() {
+
+    webTestClient
+      .delete()
+        .uri("/todos/{id}", 1)
+      .exchange()
+        .expectStatus()
+        .isNotFound()
+      .expectBody()
+        .jsonPath("$.description").isEqualTo("Id: 1 not found");
+  }
+
+  @Test
+  void shouldDeleteTodo() {
+
+    final var todoTobeDeleted = new TodoDocument(1L, "todo no task", "description", null);
+    todoRepository.save(todoTobeDeleted);
+
+    webTestClient
+      .delete()
+        .uri("/todos/{id}", 1)
+      .exchange()
+        .expectStatus()
+        .isAccepted()
+      .expectBody()
+        .isEmpty();
+
+    final var todo = todoRepository.findById(1L);
+    Assertions.assertFalse(todo.isPresent());
   }
 
 
