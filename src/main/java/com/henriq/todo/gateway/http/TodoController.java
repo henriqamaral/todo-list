@@ -4,11 +4,13 @@ import com.henriq.todo.gateway.http.json.TodoResource;
 import com.henriq.todo.usecase.CreateTodo;
 import com.henriq.todo.usecase.GetAllTodo;
 import com.henriq.todo.usecase.GetTodoById;
+import com.henriq.todo.usecase.PutTodo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -29,6 +31,8 @@ public class TodoController {
 
   private final CreateTodo createTodo;
 
+  private final PutTodo putTodo;
+
   @GetMapping
   public List<TodoResource> getAll() {
     return getAllTodo.execute().stream().map(TodoResource::from).collect(Collectors.toList());
@@ -43,5 +47,12 @@ public class TodoController {
   @ResponseStatus(HttpStatus.CREATED)
   public void create(@RequestBody final TodoResource todoResource) {
     createTodo.execute(todoResource.to());
+  }
+
+  @PutMapping("/{id}")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public void update(@PathVariable(value = "id") Long id,
+                     @RequestBody final TodoResource todoResource) {
+    putTodo.execute(id, todoResource.to());
   }
 }

@@ -1,5 +1,6 @@
 package com.henriq.todo.e2e;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.henriq.todo.gateway.http.json.TaskResource;
@@ -224,8 +225,7 @@ public class TodoIntegration {
   void shouldFailCreateTodoWithTaskWithNoId() {
 
     final var taskWihNoId = new TaskResource(null, "task one", "description");
-    final var taskWihNoName = new TaskResource(null, "task one", "description");
-    final var newTodo = new TodoResource(1L, "new name", "description", List.of(taskWihNoId, taskWihNoName));
+    final var newTodo = new TodoResource(1L, "new name", "description", List.of(taskWihNoId));
 
     webTestClient
       .post()
@@ -282,6 +282,78 @@ public class TodoIntegration {
       .exchange()
         .expectStatus()
         .isCreated();
+
+    final var todo = todoRepository.findById(1L);
+    assertThat(todo)
+      .isPresent()
+      .get()
+      .extracting("id", "name", "description")
+      .contains(1L, "new name", "description");
+
+  }
+
+  @Test
+  void shouldFailUpdateWithTodoNotFound() {
+
+    final var task = new TaskResource(1L, "task", "description");
+    final var updateTodo = new TodoResource(1L, "new name", "description", List.of(task));
+
+    webTestClient
+      .put()
+        .uri("/todos/{id}", 1)
+        .body(Mono.just(updateTodo), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isNotFound()
+      .expectBody()
+        .jsonPath("$.description").isEqualTo("Id: 1 not found");
+  }
+
+  @Test
+  void shouldFailUpdateWithTodoWithTasksDuplicated() {
+
+    final var task = new TaskResource(1L, "task", "description");
+    final var taskWithDuplicatedId = new TaskResource(1L, "task duplicated id", "description");
+    final var updateTodo = new TodoResource(1L, "new name", "description", List.of(task, taskWithDuplicatedId));
+
+    webTestClient
+      .put()
+        .uri("/todos/{id}", 1)
+        .body(Mono.just(updateTodo), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isBadRequest()
+      .expectBody()
+        .jsonPath("$.description").isEqualTo("Task ids must be unique.[1, 1]");
+  }
+
+
+  @Test
+  void shouldUpdateWithTodoSuccess() {
+
+    final var todoInDb = new TodoDocument(1L, "todo no task", "description", null);
+    todoRepository.save(todoInDb);
+
+    final var task = new TaskResource(1L, "new task", "description");
+    final var updateTodo = new TodoResource(1L, "todo with task", "description", List.of(task));
+
+    webTestClient
+      .put()
+        .uri("/todos/{id}", 1)
+        .body(Mono.just(updateTodo), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isAccepted();
+
+    final var todoUpdated = todoRepository.findById(1L);
+
+    assertThat(todoUpdated)
+      .isPresent()
+      .get()
+      .extracting("id", "name", "description", "tasks")
+      .doesNotContainNull()
+      .contains(1L, "todo with task", "description",
+                List.of(new TaskDocument(1L, "new task", "description")));
   }
 
 
