@@ -2,14 +2,18 @@ package com.henriq.todo.e2e;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+import com.henriq.todo.gateway.http.json.TaskResource;
+import com.henriq.todo.gateway.http.json.TodoResource;
 import com.henriq.todo.gateway.mongodb.document.TaskDocument;
 import com.henriq.todo.gateway.mongodb.document.TodoDocument;
 import com.henriq.todo.gateway.mongodb.repository.TodoRepository;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -129,5 +133,156 @@ public class TodoIntegration {
         .jsonPath("$.tasks[0].name").isEqualTo("task")
         .jsonPath("$.tasks[0].description").isEqualTo("description");
   }
+
+  @Test
+  void shouldFailTodoWithNoTaskAndIdNull() {
+
+    final var todoNoId = new TodoResource(null, "name", "description", null);
+
+    webTestClient
+      .post()
+        .uri("/todos")
+        .body(Mono.just(todoNoId), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isBadRequest()
+      .expectBody()
+        .jsonPath("$.description").isEqualTo("id value must not be null");
+  }
+
+  @Test
+  void shouldFailTodoWithNoTaskAndIdNullAndNameNull() {
+
+    final var todoNoIdNoName = new TodoResource(null, null, "description", null);
+
+    webTestClient
+      .post()
+        .uri("/todos")
+        .body(Mono.just(todoNoIdNoName), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isBadRequest()
+      .expectBody()
+        .jsonPath("$.description").value(Matchers.anything("id value must not be null")
+    );
+  }
+
+  @Test
+  void shouldFailTodoWithNoTaskAndNameNull() {
+
+    final var todoNoIdNoName = new TodoResource(1L, null, "description", null);
+
+    webTestClient
+      .post()
+        .uri("/todos")
+        .body(Mono.just(todoNoIdNoName), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isBadRequest()
+      .expectBody()
+        .jsonPath("$.description").isEqualTo("name value must not be empty");
+  }
+
+  @Test
+  void shouldFailCreateTodoWithAlreadyId() {
+
+    final var todoInDb = new TodoDocument(1L, "todo no task", "description", null);
+    todoRepository.save(todoInDb);
+
+    final var newTodo = new TodoResource(1L, "new name", "description", null);
+
+    webTestClient
+      .post()
+        .uri("/todos")
+        .body(Mono.just(newTodo), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isBadRequest()
+      .expectBody()
+        .jsonPath("$.description").isEqualTo("Todo Id: 1 already in database");
+  }
+
+  @Test
+  void shouldFailCreateTodoWithTaskWithDuplicatedIds() {
+
+    final var task = new TaskResource(1L, "task one", "description");
+    final var taskWithDuplicatedId = new TaskResource(1L, "task duplicated id", "description");
+    final var newTodo = new TodoResource(1L, "new name", "description", List.of(task, taskWithDuplicatedId));
+
+    webTestClient
+      .post()
+        .uri("/todos")
+        .body(Mono.just(newTodo), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isBadRequest()
+      .expectBody()
+        .jsonPath("$.description").isEqualTo("Task ids must be unique.[1, 1]");
+  }
+
+  @Test
+  void shouldFailCreateTodoWithTaskWithNoId() {
+
+    final var taskWihNoId = new TaskResource(null, "task one", "description");
+    final var taskWihNoName = new TaskResource(null, "task one", "description");
+    final var newTodo = new TodoResource(1L, "new name", "description", List.of(taskWihNoId, taskWihNoName));
+
+    webTestClient
+      .post()
+        .uri("/todos")
+        .body(Mono.just(newTodo), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isBadRequest()
+      .expectBody()
+      .jsonPath("$.description").isEqualTo("id value must not be null");
+  }
+
+  @Test
+  void shouldFailCreateTodoWithTaskWithEmptyName() {
+
+    final var taskWihNoName = new TaskResource(1L, "", "description");
+    final var newTodo = new TodoResource(1L, "new name", "description", List.of(taskWihNoName));
+
+    webTestClient
+      .post()
+        .uri("/todos")
+        .body(Mono.just(newTodo), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isBadRequest()
+      .expectBody()
+        .jsonPath("$.description").isEqualTo("name value must not be empty");
+  }
+
+  @Test
+  void shouldCreateTodoWithNoTask() {
+
+    final var newTodo = new TodoResource(1L, "new name", "description", null);
+
+    webTestClient
+      .post()
+        .uri("/todos")
+        .body(Mono.just(newTodo), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isCreated();
+  }
+
+  @Test
+  void shouldCreateTodoWithTask() {
+
+    final var task = new TaskResource(1L, "task", "description");
+    final var newTodo = new TodoResource(1L, "new name", "description", List.of(task));
+
+    webTestClient
+      .post()
+        .uri("/todos")
+        .body(Mono.just(newTodo), TodoResource.class)
+      .exchange()
+        .expectStatus()
+        .isCreated();
+  }
+
 
 }

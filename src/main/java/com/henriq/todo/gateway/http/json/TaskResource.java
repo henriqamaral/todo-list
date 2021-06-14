@@ -23,4 +23,8 @@ public class TaskResource {
     return tasks.stream().map(TaskResource::from).collect(Collectors.toList());
   }
 
+  public Task to() {
+    return new Task(this.getId(), this.getName(), this.getDescription());
+  }
+
 }

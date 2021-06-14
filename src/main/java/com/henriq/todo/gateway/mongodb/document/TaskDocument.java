@@ -1,9 +1,7 @@
 package com.henriq.todo.gateway.mongodb.document;
 
 import com.henriq.todo.domain.Task;
-import com.henriq.todo.domain.Todo;
 import lombok.Value;
-import org.springframework.data.annotation.Id;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,7 +9,6 @@ import java.util.stream.Collectors;
 @Value
 public class TaskDocument {
 
-  @Id
   Long id;
 
   String name;

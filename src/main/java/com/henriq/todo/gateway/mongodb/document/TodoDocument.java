@@ -4,18 +4,18 @@ package com.henriq.todo.gateway.mongodb.document;
 import com.henriq.todo.domain.Task;
 import com.henriq.todo.domain.Todo;
 import lombok.Value;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.validation.constraints.NotEmpty;
 
 @Value
 @Document(collection = "todos")
 public class TodoDocument {
 
+  @Id
   Long id;
 
   String name;
