@@ -11,6 +11,7 @@ import com.henriq.todo.gateway.mongodb.repository.TodoRepository;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,40 +34,43 @@ public class TodoIntegration {
     todoRepository.deleteAll();
   }
 
-  @Test
-  void shouldReturnEmptyList() {
+  @Nested
+  class GetAll {
 
-    webTestClient
-      .get()
+    @Test
+    void shouldReturnEmptyList() {
+
+      webTestClient
+        .get()
         .uri("/todos")
-      .exchange()
+        .exchange()
         .expectStatus()
         .isOk()
-      .expectHeader()
-      .contentType(APPLICATION_JSON)
-      .expectBody()
-      .jsonPath("$.length()").isEqualTo(0)
-      .json("[]");
-  }
-
-  @Test
-  void shouldReturnTodoList() {
-
-    final var todoNoTask = new TodoDocument(1L, "todo no task", "description", null);
-    final var task = new TaskDocument(1L, "task", "description");
-    final var todoWithTask = new TodoDocument(2L, "todo with task", "second description", List.of(task));
-
-    todoRepository.saveAll(List.of(todoNoTask, todoWithTask));
-
-    webTestClient
-      .get()
-        .uri("/todos")
-      .exchange()
-        .expectStatus()
-        .isOk()
-      .expectHeader()
+        .expectHeader()
         .contentType(APPLICATION_JSON)
-      .expectBody()
+        .expectBody()
+        .jsonPath("$.length()").isEqualTo(0)
+        .json("[]");
+    }
+
+    @Test
+    void shouldReturnTodoList() {
+
+      final var todoNoTask = new TodoDocument(1L, "todo no task", "description", null);
+      final var task = new TaskDocument(1L, "task", "description");
+      final var todoWithTask = new TodoDocument(2L, "todo with task", "second description", List.of(task));
+
+      todoRepository.saveAll(List.of(todoNoTask, todoWithTask));
+
+      webTestClient
+        .get()
+        .uri("/todos")
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectHeader()
+        .contentType(APPLICATION_JSON)
+        .expectBody()
         .jsonPath("$.length()").isEqualTo(2)
         .jsonPath("$[0].id").isEqualTo(1)
         .jsonPath("$[0].name").isEqualTo("todo no task")
@@ -79,54 +83,59 @@ public class TodoIntegration {
         .jsonPath("$[1].tasks[0].id").isEqualTo(1)
         .jsonPath("$[1].tasks[0].name").isEqualTo("task")
         .jsonPath("$[1].tasks[0].description").isEqualTo("description");
+    }
+
   }
 
-  @Test
-  void shouldReturnNotFoundIdNotExist() {
+  @Nested
+  class GetById {
 
-    webTestClient
-      .get()
+    @Test
+    void shouldReturnNotFoundIdNotExist() {
+
+      webTestClient
+        .get()
         .uri("/todos/{id}", 1)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isNotFound()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.description").isEqualTo("Id: 1 not found");
-  }
+    }
 
-  @Test
-  void shouldReturnTodoWithNoTaskById() {
+    @Test
+    void shouldReturnTodoWithNoTaskById() {
 
-    final var todoNoTask = new TodoDocument(1L, "todo no task", "description", null);
-    todoRepository.save(todoNoTask);
+      final var todoNoTask = new TodoDocument(1L, "todo no task", "description", null);
+      todoRepository.save(todoNoTask);
 
-    webTestClient
-      .get()
+      webTestClient
+        .get()
         .uri("/todos/{id}", 1)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isOk()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.id").isEqualTo(1)
         .jsonPath("$.name").isEqualTo("todo no task")
         .jsonPath("$.description").isEqualTo("description")
         .jsonPath("$.tasks").isEmpty();
-  }
+    }
 
-  @Test
-  void shouldReturnTodoWithTaskById() {
+    @Test
+    void shouldReturnTodoWithTaskById() {
 
-    final var task = new TaskDocument(1L, "task", "description");
-    final var todoWithTask = new TodoDocument(2L, "todo with task", "second description", List.of(task));
-    todoRepository.save(todoWithTask);
+      final var task = new TaskDocument(1L, "task", "description");
+      final var todoWithTask = new TodoDocument(2L, "todo with task", "second description", List.of(task));
+      todoRepository.save(todoWithTask);
 
-    webTestClient
-      .get()
+      webTestClient
+        .get()
         .uri("/todos/{id}", 2)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isOk()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.id").isEqualTo(2)
         .jsonPath("$.name").isEqualTo("todo with task")
         .jsonPath("$.description").isEqualTo("second description")
@@ -134,261 +143,278 @@ public class TodoIntegration {
         .jsonPath("$.tasks[0].id").isEqualTo(1)
         .jsonPath("$.tasks[0].name").isEqualTo("task")
         .jsonPath("$.tasks[0].description").isEqualTo("description");
+    }
+
   }
 
-  @Test
-  void shouldFailTodoWithNoTaskAndIdNull() {
+  @Nested
+  class CreateTodo {
 
-    final var todoNoId = new TodoResource(null, "name", "description", null);
+    @Test
+    void shouldFailTodoWithNoTaskAndIdNull() {
 
-    webTestClient
-      .post()
+      final var todoNoId = new TodoResource(null, "name", "description", null);
+
+      webTestClient
+        .post()
         .uri("/todos")
         .body(Mono.just(todoNoId), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isBadRequest()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.description").isEqualTo("id value must not be null");
-  }
+    }
 
-  @Test
-  void shouldFailTodoWithNoTaskAndIdNullAndNameNull() {
+    @Test
+    void shouldFailTodoWithNoTaskAndIdNullAndNameNull() {
 
-    final var todoNoIdNoName = new TodoResource(null, null, "description", null);
+      final var todoNoIdNoName = new TodoResource(null, null, "description", null);
 
-    webTestClient
-      .post()
+      webTestClient
+        .post()
         .uri("/todos")
         .body(Mono.just(todoNoIdNoName), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isBadRequest()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.description").value(Matchers.anything("id value must not be null")
-    );
-  }
+      );
+    }
 
-  @Test
-  void shouldFailTodoWithNoTaskAndNameNull() {
+    @Test
+    void shouldFailTodoWithNoTaskAndNameNull() {
 
-    final var todoNoIdNoName = new TodoResource(1L, null, "description", null);
+      final var todoNoIdNoName = new TodoResource(1L, null, "description", null);
 
-    webTestClient
-      .post()
+      webTestClient
+        .post()
         .uri("/todos")
         .body(Mono.just(todoNoIdNoName), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isBadRequest()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.description").isEqualTo("name value must not be empty");
-  }
+    }
 
-  @Test
-  void shouldFailCreateTodoWithAlreadyId() {
+    @Test
+    void shouldFailCreateTodoWithAlreadyId() {
 
-    final var todoInDb = new TodoDocument(1L, "todo no task", "description", null);
-    todoRepository.save(todoInDb);
+      final var todoInDb = new TodoDocument(1L, "todo no task", "description", null);
+      todoRepository.save(todoInDb);
 
-    final var newTodo = new TodoResource(1L, "new name", "description", null);
+      final var newTodo = new TodoResource(1L, "new name", "description", null);
 
-    webTestClient
-      .post()
+      webTestClient
+        .post()
         .uri("/todos")
         .body(Mono.just(newTodo), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isBadRequest()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.description").isEqualTo("Todo Id: 1 already in database");
-  }
+    }
 
-  @Test
-  void shouldFailCreateTodoWithTaskWithDuplicatedIds() {
+    @Test
+    void shouldFailCreateTodoWithTaskWithDuplicatedIds() {
 
-    final var task = new TaskResource(1L, "task one", "description");
-    final var taskWithDuplicatedId = new TaskResource(1L, "task duplicated id", "description");
-    final var newTodo = new TodoResource(1L, "new name", "description", List.of(task, taskWithDuplicatedId));
+      final var task = new TaskResource(1L, "task one", "description");
+      final var taskWithDuplicatedId = new TaskResource(1L, "task duplicated id", "description");
+      final var newTodo = new TodoResource(1L, "new name", "description", List.of(task, taskWithDuplicatedId));
 
-    webTestClient
-      .post()
+      webTestClient
+        .post()
         .uri("/todos")
         .body(Mono.just(newTodo), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isBadRequest()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.description").isEqualTo("Task ids must be unique.[1, 1]");
-  }
+    }
 
-  @Test
-  void shouldFailCreateTodoWithTaskWithNoId() {
+    @Test
+    void shouldFailCreateTodoWithTaskWithNoId() {
 
-    final var taskWihNoId = new TaskResource(null, "task one", "description");
-    final var newTodo = new TodoResource(1L, "new name", "description", List.of(taskWihNoId));
+      final var taskWihNoId = new TaskResource(null, "task one", "description");
+      final var newTodo = new TodoResource(1L, "new name", "description", List.of(taskWihNoId));
 
-    webTestClient
-      .post()
+      webTestClient
+        .post()
         .uri("/todos")
         .body(Mono.just(newTodo), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isBadRequest()
-      .expectBody()
-      .jsonPath("$.description").isEqualTo("id value must not be null");
-  }
+        .expectBody()
+        .jsonPath("$.description").isEqualTo("id value must not be null");
+    }
 
-  @Test
-  void shouldFailCreateTodoWithTaskWithEmptyName() {
+    @Test
+    void shouldFailCreateTodoWithTaskWithEmptyName() {
 
-    final var taskWihNoName = new TaskResource(1L, "", "description");
-    final var newTodo = new TodoResource(1L, "new name", "description", List.of(taskWihNoName));
+      final var taskWihNoName = new TaskResource(1L, "", "description");
+      final var newTodo = new TodoResource(1L, "new name", "description", List.of(taskWihNoName));
 
-    webTestClient
-      .post()
+      webTestClient
+        .post()
         .uri("/todos")
         .body(Mono.just(newTodo), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isBadRequest()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.description").isEqualTo("name value must not be empty");
-  }
+    }
 
-  @Test
-  void shouldCreateTodoWithNoTask() {
+    @Test
+    void shouldCreateTodoWithNoTask() {
 
-    final var newTodo = new TodoResource(1L, "new name", "description", null);
+      final var newTodo = new TodoResource(1L, "new name", "description", null);
 
-    webTestClient
-      .post()
+      webTestClient
+        .post()
         .uri("/todos")
         .body(Mono.just(newTodo), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isCreated();
-  }
+    }
 
-  @Test
-  void shouldCreateTodoWithTask() {
+    @Test
+    void shouldCreateTodoWithTask() {
 
-    final var task = new TaskResource(1L, "task", "description");
-    final var newTodo = new TodoResource(1L, "new name", "description", List.of(task));
+      final var task = new TaskResource(1L, "task", "description");
+      final var newTodo = new TodoResource(1L, "new name", "description", List.of(task));
 
-    webTestClient
-      .post()
+      webTestClient
+        .post()
         .uri("/todos")
         .body(Mono.just(newTodo), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isCreated();
 
-    final var todo = todoRepository.findById(1L);
-    assertThat(todo)
-      .isPresent()
-      .get()
-      .extracting("id", "name", "description")
-      .contains(1L, "new name", "description");
+      final var todo = todoRepository.findById(1L);
+      assertThat(todo)
+        .isPresent()
+        .get()
+        .extracting("id", "name", "description")
+        .contains(1L, "new name", "description");
+
+    }
 
   }
 
-  @Test
-  void shouldFailUpdateWithTodoNotFound() {
+  @Nested
+  class UpdateTodo {
 
-    final var task = new TaskResource(1L, "task", "description");
-    final var updateTodo = new TodoResource(1L, "new name", "description", List.of(task));
+    @Test
+    void shouldFailUpdateWithTodoNotFound() {
 
-    webTestClient
-      .put()
+      final var task = new TaskResource(1L, "task", "description");
+      final var updateTodo = new TodoResource(1L, "new name", "description", List.of(task));
+
+      webTestClient
+        .put()
         .uri("/todos/{id}", 1)
         .body(Mono.just(updateTodo), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isNotFound()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.description").isEqualTo("Id: 1 not found");
-  }
+    }
 
-  @Test
-  void shouldFailUpdateWithTodoWithTasksDuplicated() {
+    @Test
+    void shouldFailUpdateWithTodoWithTasksDuplicated() {
 
-    final var task = new TaskResource(1L, "task", "description");
-    final var taskWithDuplicatedId = new TaskResource(1L, "task duplicated id", "description");
-    final var updateTodo = new TodoResource(1L, "new name", "description", List.of(task, taskWithDuplicatedId));
+      final var task = new TaskResource(1L, "task", "description");
+      final var taskWithDuplicatedId = new TaskResource(1L, "task duplicated id", "description");
+      final var updateTodo = new TodoResource(1L, "new name", "description", List.of(task, taskWithDuplicatedId));
 
-    webTestClient
-      .put()
+      webTestClient
+        .put()
         .uri("/todos/{id}", 1)
         .body(Mono.just(updateTodo), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isBadRequest()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.description").isEqualTo("Task ids must be unique.[1, 1]");
-  }
+    }
 
+    @Test
+    void shouldUpdateTodoWithSuccess() {
 
-  @Test
-  void shouldUpdateTodoWithSuccess() {
+      final var todoInDb = new TodoDocument(1L, "todo no task", "description", null);
+      todoRepository.save(todoInDb);
 
-    final var todoInDb = new TodoDocument(1L, "todo no task", "description", null);
-    todoRepository.save(todoInDb);
+      final var task = new TaskResource(1L, "new task", "description");
+      final var updateTodo = new TodoResource(1L, "todo with task", "description", List.of(task));
 
-    final var task = new TaskResource(1L, "new task", "description");
-    final var updateTodo = new TodoResource(1L, "todo with task", "description", List.of(task));
-
-    webTestClient
-      .put()
+      webTestClient
+        .put()
         .uri("/todos/{id}", 1)
         .body(Mono.just(updateTodo), TodoResource.class)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isNoContent();
 
-    final var todoUpdated = todoRepository.findById(1L);
+      final var todoUpdated = todoRepository.findById(1L);
 
-    assertThat(todoUpdated)
-      .isPresent()
-      .get()
-      .extracting("id", "name", "description", "tasks")
-      .doesNotContainNull()
-      .contains(1L, "todo with task", "description",
-                List.of(new TaskDocument(1L, "new task", "description")));
+      assertThat(todoUpdated)
+        .isPresent()
+        .get()
+        .extracting("id", "name", "description", "tasks")
+        .doesNotContainNull()
+        .contains(1L, "todo with task", "description",
+                  List.of(new TaskDocument(1L, "new task", "description")));
+    }
+
+
   }
 
+  @Nested
+  class DeleteTodo {
 
-  @Test
-  void shouldFailDeleteWithTodoNotFound() {
+    @Test
+    void shouldFailDeleteWithTodoNotFound() {
 
-    webTestClient
-      .delete()
+      webTestClient
+        .delete()
         .uri("/todos/{id}", 1)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isNotFound()
-      .expectBody()
+        .expectBody()
         .jsonPath("$.description").isEqualTo("Id: 1 not found");
-  }
+    }
 
-  @Test
-  void shouldDeleteTodo() {
+    @Test
+    void shouldDeleteTodo() {
 
-    final var todoTobeDeleted = new TodoDocument(1L, "todo no task", "description", null);
-    todoRepository.save(todoTobeDeleted);
+      final var todoTobeDeleted = new TodoDocument(1L, "todo no task", "description", null);
+      todoRepository.save(todoTobeDeleted);
 
-    webTestClient
-      .delete()
+      webTestClient
+        .delete()
         .uri("/todos/{id}", 1)
-      .exchange()
+        .exchange()
         .expectStatus()
         .isAccepted()
-      .expectBody()
+        .expectBody()
         .isEmpty();
 
-    final var todo = todoRepository.findById(1L);
-    Assertions.assertFalse(todo.isPresent());
+      final var todo = todoRepository.findById(1L);
+      Assertions.assertFalse(todo.isPresent());
+    }
+
   }
+
 
 
 }
