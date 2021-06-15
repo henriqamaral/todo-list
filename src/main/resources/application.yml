@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: Todo-List
+eureka:
+  client:
+    enabled: false
+    fetchRegistry: true
+    registerWithEureka: false
+
+---
+spring:
+  profiles: docker
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    enabled: true
+    fetchRegistry: true
+    registerWithEureka: true
+  instance:
+    leaseRenewalIntervalInSeconds: 10
